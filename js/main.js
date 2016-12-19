@@ -14,6 +14,7 @@ var direction = 'right';   // snake moving direction
 var headCoords = [4, 4];   // x, y - position of snake head
 var fructCoords = [8, 12]; // x, y - position of fruct
 var fructSpawned = true;   // Does have spawned fruct or no
+var tailCoords = []; // Array of all tail elements (without head)
 // ....................
 
 // function that returns a random number
@@ -32,18 +33,16 @@ function preload() {
 
 // Game initialization
 function create() {
-	setInterval(updateSec, 300); // Game speed, function that updates every 0.3 sec and change the coords of snake
 	game.stage.backgroundColor = '#71c5cf'; // Background color
 
 	game.head = game.add.sprite(headCoords[1]*32, headCoords[0]*32, 'head'); // Snake head object
 	game.fruct = game.add.sprite(fructCoords[1]*32, fructCoords[0]*32, 'fruct'); // Fruct object
 
-	// Array of all tail elements (without head)
 	// first element - tail object, then X and Y
 	tailCoords = [
 		[game.add.sprite(4,3,'tail'), 3, 4],
 		[game.add.sprite(4,2,'tail'), 2, 4],
-		[game.add.sprite(4,1,'tail'), 1, 4]
+		[game.add.sprite(4,1,'tail'), 1, 4],
 	];
 	// ....................
 
@@ -68,6 +67,8 @@ function create() {
     	direction = 'right';
     }, this);
     // ....................
+
+    setInterval(updateSec, 300); // Game speed, function that updates every 0.3 sec and change the coords of snake
 }
 // ....................
 
@@ -117,24 +118,15 @@ function updateSec() {
 
 	// update tail coords
 	// for every tail object
-	for(var i = 0; i < tailCoords.length; i++)
+	for(var i = tailCoords.length-1; i >= 0 ; i--)
 	{
 		if (i === 0) {
-			var tempX = tailCoords[i][1];
-			var tempY = tailCoords[i][2];
 			tailCoords[i][1] = headCoords[0];
 			tailCoords[i][2] = headCoords[1];
-			tailCoords[i+1][1] = tempX;
-			tailCoords[i+1][2] = tempY;
 		} 
-		else if (i === tailCoords.length-1) {} // for last object we need to do nothing
 		else {
-			var tempX = tailCoords[i][1];
-			var tempY = tailCoords[i][2];
-			tailCoords[i][1] = tailCoords[i+1][1];
-			tailCoords[i][2] = tailCoords[i+1][2];
-			tailCoords[i+1][1] = tempX;
-			tailCoords[i+1][2] = tempY;
+			tailCoords[i][1] = tailCoords[i-1][1];
+			tailCoords[i][2] = tailCoords[i-1][2];
 		}
 	} 
 	// ....................
