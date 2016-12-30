@@ -5,3 +5,7 @@
 canvas {
   margin: 0 auto;
 }
+
+body {
+  height: 100%;
+}

@@ -1,178 +1,104 @@
-/* 
-	Size of game field (20x25) 
-	32x32 pixels - size of any object on the screen,
-	so 800 / 32 = 25 and 640 / 32 = 20
-*/
-const MAX_WIDTH = 25;
-const MAX_HEIGHT = 20;
-// ...................
+const MAX_WIDTH = Math.floor(document.body.clientWidth / 32);
+const MAX_HEIGHT = Math.floor((screen.height - 150) / 32);
+let direction = 'right',
+    fruct,
+    snake = [],
+    score,
+    gameLoop;
 
-/*
-	Main variables of project
-*/
-var direction = 'right';   // snake moving direction
-var headCoords = [4, 4];   // x, y - position of snake head
-var fructCoords = [8, 12]; // x, y - position of fruct
-var fructSpawned = true;   // Does have spawned fruct or no
-var tailCoords = []; // Array of all tail elements (without head)
-// ....................
-
-// function that returns a random number
 function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-// ....................
 
-// load game sprites
-function preload() {
-	game.load.image('head', 'assets/head.png');
-	game.load.image('tail', 'assets/tail.png');
-	game.load.image('fruct', 'assets/fruct.png');
+let game = new Phaser.Game(MAX_WIDTH * 32, MAX_HEIGHT * 32);
+
+let gameState = {
+    preload: function () {
+        game.load.image('head', 'assets/head.png');
+        game.load.image('tail', 'assets/tail.png');
+        game.load.image('fruct', 'assets/fruct.png');
+    },
+
+    create: function () {
+        clearInterval(gameLoop);
+        game.stage.backgroundColor = '#3598db';
+        direction = 'right';
+        snake = [
+            game.add.sprite(4 * 32, 4 * 32, 'head'),
+            game.add.sprite(3 * 32, 4 * 32, 'tail'),
+            game.add.sprite(2 * 32, 4 * 32, 'tail'),
+            game.add.sprite(32, 4 * 32, 'tail')
+        ];
+
+        fruct = game.add.sprite(12 * 32, 12 * 32, 'fruct');
+        score = 0;
+
+        // get keys for WASD control
+        let wKey = game.input.keyboard.addKey(Phaser.Keyboard.W),
+            sKey = game.input.keyboard.addKey(Phaser.Keyboard.S),
+            aKey = game.input.keyboard.addKey(Phaser.Keyboard.A),
+            dKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
+        // ....................
+
+        // functions that change moving direction of Snake by WASD keys
+        wKey.onDown.add(function () {
+            direction = 'up';
+        }, this);
+        sKey.onDown.add(function () {
+            direction = 'down';
+        }, this);
+        aKey.onDown.add(function () {
+            direction = 'left';
+        }, this);
+        dKey.onDown.add(function () {
+            direction = 'right';
+        }, this);
+        // ....................
+
+        gameLoop = setInterval(updateSnake, 150);
+    },
+
+    update: function () {
+    }
+};
+
+game.state.add('game', gameState);
+
+function updateSnake() {
+
+    for (let i = snake.length - 1; i > 0; i--) {
+        snake[i].x = snake[i - 1].x;
+        snake[i].y = snake[i - 1].y;
+    }
+
+    switch (direction) {
+        case 'left':
+            snake[0].x -= 32;
+            if (snake[0].x < 0) snake[0].x = (MAX_WIDTH - 1) * 32;
+            break;
+        case 'right':
+            snake[0].x += 32;
+            if (snake[0].x > (MAX_WIDTH - 1) * 32) snake[0].x = 0;
+            break;
+        case 'up':
+            snake[0].y -= 32;
+            if (snake[0].y < 0) snake[0].y = (MAX_HEIGHT - 1) * 32;
+            break;
+        case 'down':
+            snake[0].y += 32;
+            if (snake[0].y > (MAX_HEIGHT - 1) * 32) snake[0].y = 0;
+            break;
+    }
+
+    for (let i = 1; i < snake.length; i++) {
+        if (snake[0].x === snake[i].x && snake[0].y === snake[i].y) game.state.start('game');
+        if (snake[0].x === fruct.x && snake[0].y === fruct.y) {
+            fruct.x = randomInt(1, MAX_WIDTH - 1) * 32;
+            fruct.y = randomInt(1, MAX_HEIGHT - 1) * 32;
+            snake.push(game.add.sprite(snake[snake.length - 1].x, snake[snake.length - 1].y, 'tail'));
+            score++;
+        }
+    }
 }
-// ....................
 
-// Game initialization
-function create() {
-	game.stage.backgroundColor = '#71c5cf'; // Background color
-
-	game.head = game.add.sprite(headCoords[1]*32, headCoords[0]*32, 'head'); // Snake head object
-	game.fruct = game.add.sprite(fructCoords[1]*32, fructCoords[0]*32, 'fruct'); // Fruct object
-
-	// first element - tail object, then X and Y
-	tailCoords = [
-		[game.add.sprite(4,3,'tail'), 3, 4],
-		[game.add.sprite(4,2,'tail'), 2, 4],
-		[game.add.sprite(4,1,'tail'), 1, 4],
-	];
-	// ....................
-
-	// get keys for WASD control
-    var wKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
-    var sKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
-    var aKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
-    var dKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
-    // ....................
-
-    // functions that change moving direction of Snake by WASD keys
-    wKey.onDown.add(function() {
-    	direction = 'up';
-    }, this);
-    sKey.onDown.add(function() {
-    	direction = 'down';
-    }, this);
-    aKey.onDown.add(function() {
-    	direction = 'left';
-    }, this);
-    dKey.onDown.add(function() {
-    	direction = 'right';
-    }, this);
-    // ....................
-
-    setInterval(updateSec, 300); // Game speed, function that updates every 0.3 sec and change the coords of snake
-}
-// ....................
-
-// game cycle
-function update() {
-
-	// if frusct isn't spawned - spawn it
-	if(!fructSpawned) {
-		var x = randomInt(1, MAX_WIDTH-2);  // random X pos
-		var y = randomInt(1, MAX_HEIGHT-2); // random Y pos
-		fructCoords = [x, y]; 				// change coords of fruct
-		fructSpawned = true;				// fruct has been spawned
-	}
-	// ....................
-
-	// if snake head on the fruct coords - pick it
-	if(headCoords[0] === fructCoords[0] && headCoords[1] === fructCoords[1]) {
-		fructSpawned = false; 											// fruct now isn't spawned
-		var x = tailCoords[tailCoords.length-1][1];						// get X of last tail object 
-		var y = tailCoords[tailCoords.length-1][2];						// get Y of last tail object
-		tailCoords.push([game.add.sprite(y*32, x*32, 'tail'), x, y]);   // add tail object in the end of snake
-	}
-	// ....................
-
-	// render fruct and snake head sprite's
-	game.fruct.x = fructCoords[0]*32; 
-	game.fruct.y = fructCoords[1]*32;
-
-	game.head.x = headCoords[0]*32;
-	game.head.y = headCoords[1]*32;
-	// ....................
-
-	// check for collision head with tail
-	// for every tail object
-	for(var i = 0; i < tailCoords.length; i++) {
-		tailCoords[i][0].x = tailCoords[i][1]*32; 													// x
-		tailCoords[i][0].y = tailCoords[i][2]*32; 													// y
-		if(tailCoords[i][1] === headCoords[0] && tailCoords[i][2] === headCoords[1]) restartGame(); // if x and y of snake head = x and y of tail then restart game
-	}
-	// ....................
-
-}
-// ....................
-
-// update snake coords every 0.3 sec
-function updateSec() {
-
-	// update tail coords
-	// for every tail object
-	for(var i = tailCoords.length-1; i >= 0 ; i--)
-	{
-		if (i === 0) {
-			tailCoords[i][1] = headCoords[0];
-			tailCoords[i][2] = headCoords[1];
-		} 
-		else {
-			tailCoords[i][1] = tailCoords[i-1][1];
-			tailCoords[i][2] = tailCoords[i-1][2];
-		}
-	} 
-	// ....................
-
-	// move snake head according to moving direction
-	switch(direction) {
-		case 'left':
-			headCoords[0]--;
-			if(headCoords[0] < 0) headCoords[0] = MAX_WIDTH-1;
-			break;
-		case 'right':
-			headCoords[0]++;
-			if(headCoords[0] > MAX_WIDTH-1) headCoords[0] = 0;
-			break;
-		case 'up':
-			headCoords[1]--;
-			if(headCoords[1] < 0) headCoords[1] = MAX_HEIGHT-1;
-			break;
-		case 'down':
-			headCoords[1]++;
-			if(headCoords[1] > MAX_HEIGHT-1) headCoords[1] = 0;
-			break;
-	}
-	// ....................
-}
-// ....................
-
-// function that delete tail objects and set variables to default values
-function restartGame() {
-
-	for (var i = tailCoords.length - 1; i >= 0; i--) {
-		tailCoords[i][0].destroy();
-		tailCoords.pop();
-	}
-
-	tailCoords = [
-		[game.add.sprite(4,3,'tail'), 3, 4],
-		[game.add.sprite(4,2,'tail'), 2, 4],
-		[game.add.sprite(4,1,'tail'), 1, 4]
-	];
-
-	direction = "right";
-	headCoords = [4, 4];
-	fructSpawned = true;
-	fructCoords = [8, 12];
-}
-// ....................
-
-var game = new Phaser.Game(800, 640, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+game.state.start('game');
